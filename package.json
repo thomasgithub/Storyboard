@@ -1,0 +1,28 @@
+{
+  "private": true,
+  "name": "Storyboard",
+  "version": "0.1.0",
+  "scripts": {
+    "start": "webpack-dev-server --inline --hot --config webpack/dev --content-base dev/",
+    "lint": "eslint src dev",
+    "build": "npm run clean && webpack --config webpack/prod",
+    "build:demo": "npm run clean:demo && webpack --config webpack/demo",
+    "clean": "rm -rf dist",
+    "clean:demo": "rm -rf demo"
+  },
+  "devDependencies": {
+    "babel-eslint": "^5.0.0",
+    "babel-loader": "^6.2.4",
+    "babel-preset-es2015": "^6.6.0",
+    "babel-preset-stage-0": "^6.5.0",
+    "css-loader": "^0.23.1",
+    "eslint": "^2.3.0",
+    "eslint-config-zavatta": "^3.0.1",
+    "extract-text-webpack-plugin": "^1.0.1",
+    "file-loader": "^0.8.5",
+    "html-webpack-plugin": "^2.10.0",
+    "style-loader": "^0.13.0",
+    "webpack": "^1.12.14",
+    "webpack-dev-server": "^1.14.1"
+  }
+}
