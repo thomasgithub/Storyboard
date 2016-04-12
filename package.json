@@ -10,6 +10,20 @@
     "clean": "rm -rf dist",
     "clean:demo": "rm -rf demo"
   },
+  "babel": {
+    "presets": [
+      "es2015",
+      "stage-0"
+    ]
+  },
+  "eslintConfig": {
+    "extends": [
+      "zavatta"
+    ],
+    "globals": {
+      "Promise": false
+    }
+  },
   "devDependencies": {
     "babel-eslint": "^6.0.2",
     "babel-loader": "^6.2.4",
@@ -24,5 +38,8 @@
     "style-loader": "^0.13.1",
     "webpack": "^1.12.15",
     "webpack-dev-server": "^1.14.1"
+  },
+  "dependencies": {
+    "es6-promise": "^3.1.2"
   }
 }

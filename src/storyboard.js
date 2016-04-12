@@ -1,3 +1,5 @@
+require('es6-promise').polyfill()
+
 import * as imageHelper from 'helpers/image'
 import * as dom from 'helpers/dom'
 
