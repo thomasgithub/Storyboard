@@ -144,6 +144,8 @@ class Storyboard {
       if (!img.loading && (!img.lastFetch || now - img.lastFetch > 1e3)) {
         img.lastFetch = now
         this.loadImage(img).then(this.draw.bind(this))
+        // re-try to draw, one and half second later
+        setTimeout(this.draw.bind(this), 1.5e3)
       }
 
       // show loader
