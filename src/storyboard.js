@@ -5,10 +5,10 @@ import * as dom from 'helpers/dom'
 
 class Storyboard {
 
-  constructor (container, imagesSrcs) {
+  constructor (container, imagesSrcs, initialIndex) {
 
-    this._index = 0
-    this._offset = 0
+    this._index = initialIndex || 0
+    this._offset = this._index
     this._duration = 1500
     this._listeners = {}
     this._container = container
