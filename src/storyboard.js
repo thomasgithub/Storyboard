@@ -18,13 +18,8 @@ class Storyboard {
     this._easing = t => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
     this._touchX = 0
 
-    this.init()
-
-  }
-
-  init () {
-    this.loadImages()
     this.render()
+
   }
 
   // --------------------------------
@@ -32,24 +27,16 @@ class Storyboard {
   // --------------------------------
 
   loadImage (img) {
+    img.loading = true
     return imageHelper.load(img.src)
-      .then(el => { img.el = el })
+      .then(el => {
+        img.el = el
+        img.loaded = true
+      })
       .catch(() => { img.error = true })
-      .then(() => { img.loaded = true })
-  }
-
-  loadImages () {
-    let p = Promise.resolve()
-    this._images.forEach((img, i) => {
-      p = p
-        .then(() => this.loadImage(img))
-        .then(() => {
-          const progress = (i + 1) / this._images.length
-          this.trigger('load-progress', [progress])
-        })
-    })
-    p.then(() => this.trigger('loaded'))
-    return p
+      .then(() => {
+        img.loading = false
+      })
   }
 
   // --------------------------------
@@ -128,36 +115,36 @@ class Storyboard {
     // check if image is loaded
     if (img.loaded) {
 
-      // check if image error
-      if (img.error) {
+      // get dom element
+      const { el } = img
 
-      } else {
+      let w = el.naturalWidth
+      let h = el.naturalHeight
+      const ratio = w / h
 
-        // get dom element
-        const { el } = img
-
-        let w = el.naturalWidth
-        let h = el.naturalHeight
-        const ratio = w / h
-
-        if (w > width) {
-          w = width
-          h = w / ratio
-        }
-
-        if (h > height) {
-          h = height
-          w = h * ratio
-        }
-
-        const x = (width - w) / 2
-        const y = (height - h) / 2
-
-        this._ctx.drawImage(img.el, x, y, w, h)
-
+      if (w > width) {
+        w = width
+        h = w / ratio
       }
 
+      if (h > height) {
+        h = height
+        w = h * ratio
+      }
+
+      const x = (width - w) / 2
+      const y = (height - h) / 2
+
+      this._ctx.drawImage(img.el, x, y, w, h)
+
     } else {
+
+      const now = Date.now()
+
+      if (!img.loading && (!img.lastFetch || now - img.lastFetch > 1e3)) {
+        img.lastFetch = now
+        this.loadImage(img).then(this.draw.bind(this))
+      }
 
       // show loader
       this._ctx.beginPath()
