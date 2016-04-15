@@ -143,9 +143,14 @@ class Storyboard {
 
       if (!img.loading && (!img.lastFetch || now - img.lastFetch > 1e3)) {
         img.lastFetch = now
-        this.loadImage(img).then(this.draw.bind(this))
-        // re-try to draw, one and half second later
-        setTimeout(this.draw.bind(this), 1.5e3)
+        this.loadImage(img)
+          .then(() => {
+            if (img.error) {
+              setTimeout(this.draw.bind(this), 1.1e3)
+            } else {
+              this.draw()
+            }
+          })
       }
 
       // show loader
@@ -153,8 +158,8 @@ class Storyboard {
       this._ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'
       this._ctx.rect(50, 50, width - 100, height - 100)
       this._ctx.fill()
-      this._ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
-      this._ctx.font = '20px monospace'
+      this._ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'
+      this._ctx.font = '40px monospace'
       this._ctx.textAlign = 'center'
       this._ctx.fillText('loading...', width / 2, height / 2)
 
