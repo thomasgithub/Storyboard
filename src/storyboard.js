@@ -242,4 +242,4 @@ class Storyboard {
 
 }
 
-export default Storyboard
+module.exports = Storyboard
