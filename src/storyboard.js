@@ -16,7 +16,7 @@ class Storyboard {
     this._canvas = dom.create('canvas')
     this._ctx = this._canvas.getContext('2d')
     this._easing = t => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
-    this._touchX = 0
+    this._now = Date.now()
 
     // start loading first image
     this.loadImage(this._images[this._index])
@@ -76,8 +76,7 @@ class Storyboard {
   render () {
     this.resize()
     dom.clearAndAppend(this._container, this._canvas)
-    this.draw()
-    this.on('load-progress', this.draw)
+    this.animate()
   }
 
   watchResize = () => {
@@ -170,18 +169,27 @@ class Storyboard {
       }
 
       // show loader
-      this._ctx.beginPath()
-      this._ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'
-      this._ctx.rect(50, 50, width - 100, height - 100)
-      this._ctx.fill()
-      this._ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'
-      this._ctx.font = '40px monospace'
-      this._ctx.textAlign = 'center'
-      this._ctx.fillText('loading...', width / 2, height / 2)
+      this.drawLoader()
 
     }
 
     // restore canvas context
+    this._ctx.restore()
+  }
+
+  drawLoader () {
+    this._ctx.save()
+    this._ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'
+    this._ctx.beginPath()
+
+    const rotation = parseInt(Date.now() - this._now, 10) / 1000
+
+    this._ctx.translate(this._canvas.width / 2, this._canvas.height / 2)
+    this._ctx.rotate(Math.PI * 1.5 * rotation)
+    this._ctx.rect(-25, -25, 50, 50)
+    this._ctx.fill()
+    this._ctx.closePath()
+
     this._ctx.restore()
   }
 
@@ -209,45 +217,11 @@ class Storyboard {
 
     if (remaining < 50) {
       this._offset = this._index
-      this.draw()
       this._animating = false
-      return
     }
 
     requestAnimationFrame(this.tick)
 
-  }
-
-  // --------------------------------
-  //          Event emitter
-  // --------------------------------
-
-  on (event, fn) {
-    const listeners = this._listeners[event] || []
-    if (listeners.indexOf(fn) === -1) {
-      listeners.push(fn)
-    }
-    this._listeners[event] = listeners
-  }
-
-  off (event, fn) {
-    let listeners = this._listeners[event] || []
-    if (fn) {
-      const index = listeners.indexOf(fn)
-      if (index > -1) {
-        listeners.splice(index, 1)
-      }
-    } else {
-      listeners = []
-    }
-    this._listeners[event] = listeners
-  }
-
-  trigger (event, args = []) {
-    const listeners = this._listeners[event] || []
-    listeners.forEach(listener => {
-      listener(...args)
-    })
   }
 
 }
