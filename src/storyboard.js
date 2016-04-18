@@ -18,8 +18,20 @@ class Storyboard {
     this._easing = t => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
     this._touchX = 0
 
+    // start loading first image
+    this.loadImage(this._images[this._index])
+
     this.render()
 
+    // start watch resize
+    this.watchResize()
+
+  }
+
+  destroy () {
+    this._container.removeChild(this._canvas)
+    this._container = null
+    this._canvas = null
   }
 
   // --------------------------------
@@ -64,18 +76,22 @@ class Storyboard {
   render () {
     this.resize()
     dom.clearAndAppend(this._container, this._canvas)
-    if (!this._resizeListener) {
-      window.addEventListener('resize', this.refresh)
-      this._resizeListener = true
-    }
     this.draw()
     this.on('load-progress', this.draw)
   }
 
+  watchResize = () => {
+    requestAnimationFrame(() => {
+      if (!this._container) { return }
+      setTimeout(this.watchResize, 100)
+      this.refresh()
+    })
+  }
+
   resize () {
     this._bounds = dom.getBounds(this._container)
-    this._canvas.width = this._bounds.width
-    this._canvas.height = this._bounds.height
+    if (this._canvas.width !== this._bounds.width) { this._canvas.width = this._bounds.width }
+    if (this._canvas.height !== this._bounds.height) { this._canvas.height = this._bounds.height }
   }
 
   refresh = () => {
