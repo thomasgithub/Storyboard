@@ -6,6 +6,7 @@ import Storyboard from 'storyboard'
 const container = document.querySelector('.Player-screen')
 const leftArrow = document.querySelector('.Player-arrow-container.left .Player-arrow')
 const rightArrow = document.querySelector('.Player-arrow-container.right .Player-arrow')
+const deleteScreen = document.querySelector('.Nav-item.delete-screen')
 const toggleText = document.querySelector('.Nav-item.toggle-text')
 const textItem = document.querySelector('.Player-text')
 
@@ -36,6 +37,12 @@ document.addEventListener('keyup', e => {
 // add click events on arrows
 leftArrow.addEventListener('click', () => s.prev())
 rightArrow.addEventListener('click', () => s.next())
+
+deleteScreen.addEventListener('click', () => {
+  if (!container.parentNode) { return }
+  container.parentNode.removeChild(container)
+  s.destroy()
+})
 
 // show/hide text
 let text = true
