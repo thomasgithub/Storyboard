@@ -99,7 +99,7 @@ class Storyboard {
   }
 
   clear () {
-    this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height)
+    this._ctx.clearRect(0, 0, this._canvas.width + 1, this._canvas.height + 1)
   }
 
   draw = () => {
