@@ -217,7 +217,6 @@ class Storyboard {
 
     if (remaining < 50) {
       this._offset = this._index
-      this._animating = false
     }
 
     requestAnimationFrame(this.tick)
