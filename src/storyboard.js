@@ -7,220 +7,167 @@ class Storyboard {
 
   constructor (container, imagesSrcs, initialIndex) {
 
+    // animation duration
+    this._duration = 500
+
+    // index of current image
     this._index = initialIndex || 0
-    this._offset = this._index
-    this._duration = 1500
-    this._listeners = {}
+
+    // dom container
     this._container = container
+
+    // images
     this._images = imagesSrcs.map(src => ({ src, loaded: false }))
-    this._canvas = dom.create('canvas')
-    this._ctx = this._canvas.getContext('2d')
-    this._easing = t => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
-    this._now = Date.now()
 
-    // start loading first image
-    this.loadImage(this._images[this._index])
-
+    // ==> render
     this.render()
 
-    // start watch resize
     this.watchResize()
+    window.addEventListener('resize', this.refresh)
 
   }
 
+  /**
+   * Clean up things
+   */
   destroy () {
-    this._container.removeChild(this._canvas)
-    this._container = null
-    this._canvas = null
+    this._destroyed = true
+    window.removeEventListener('resize', this.refresh)
   }
 
-  // --------------------------------
-  //          Image loading
-  // --------------------------------
+  /**
+   * Initialize wrapper
+   */
+  render () {
+    this._container.style.overflow = 'hidden'
+    this._slider = dom.create('div')
+    this._slider.style.transition = `${this._duration}ms ease-in-out transform`
+    this._slider.style.position = 'absolute'
+    this._slider.style.top = 0
+    this._slider.style.left = 0
+    this._slider.style.right = 0
+    this._slider.style.bottom = 0
+    dom.clearAndAppend(this._container, this._slider)
+    this.draw()
+  }
 
-  loadImage (img) {
+  watchResize = () => {
+    if (this._destroyed) { return }
+    this.refresh()
+    setTimeout(this.watchResize, 500)
+  }
+
+  draw () {
+    this._bounds = dom.getBounds(this._slider)
+    this._images.forEach(this.drawImage)
+    this.refresh()
+  }
+
+  drawImage = (img, i) => {
+    const image = dom.create('img')
+    image.style.position = 'absolute'
+    image.style.transition = '100ms ease-out transform'
+    image.style.transformOrigin = 'top left'
+    image.style.left = `${i * 100}%`
+    image.src = img.src
+    img.domEl = image
+    this._slider.appendChild(image)
+  }
+
+  refresh = () => {
+    this.loadNeededImages()
+    this._bounds = dom.getBounds(this._slider)
+    dom.translate(this._slider, this._index * this._bounds.width * -1)
+    this._images.forEach(this.scaleImage)
+  }
+
+  scaleImage = img => {
+    if (img.loaded) {
+
+      const { width, height } = this._bounds
+      const { el, domEl } = img
+
+      let w = el.naturalWidth
+      let h = el.naturalHeight
+
+      let scale = 1
+
+      if (w > width) {
+        scale = width / el.naturalWidth
+        h *= scale
+      }
+
+      if (h > height) {
+        scale = height / el.naturalHeight
+        w *= scale
+      }
+
+      const x = (width - (scale * el.naturalWidth)) / 2
+      const y = (height - (scale * el.naturalHeight)) / 2
+
+      img.domEl.style.opacity = 1
+      dom.ajust(domEl, scale, x, y)
+
+    } else {
+      img.domEl.style.opacity = 0
+    }
+  }
+
+  loadNeededImages () {
+    [
+      this._images[this._index],
+      this._index > 0 ? this._images[this._index - 1] : null,
+      this._index < this._images.length - 1 ? this._images[this._index + 1] : null
+    ]
+      .filter(img => !!img)
+      .map(this.loadImage)
+  }
+
+  /**
+   * Load an image
+   * Attach error prop to it if failed
+   *
+   * @return {Promise} - resolved when image finished loading
+   */
+  loadImage = (img) => {
     img.loading = true
     return imageHelper.load(img.src)
+
+      // all is alright
       .then(el => {
         img.el = el
         img.loaded = true
       })
-      .catch(() => { img.error = true })
+
+      // image failed loading
+      .catch(() => {
+        img.error = true
+      })
+
+      // image is not loading anymore
       .then(() => {
         img.loading = false
       })
   }
 
-  // --------------------------------
-  //           Navigation
-  // --------------------------------
-
+  /**
+   * Increase index
+   */
   next () {
     if (this._index < this._images.length - 1) {
       ++this._index
-      this.animate()
+      this.refresh()
     }
   }
 
+  /**
+   * Decrease index
+   */
   prev () {
     if (this._index > 0) {
       --this._index
-      this.animate()
-    }
-  }
-
-  // --------------------------------
-  //             Canvas
-  // --------------------------------
-
-  render () {
-    this.resize()
-    dom.clearAndAppend(this._container, this._canvas)
-    this.animate()
-  }
-
-  watchResize = () => {
-    requestAnimationFrame(() => {
-      if (!this._container) { return }
-      setTimeout(this.watchResize, 100)
       this.refresh()
-    })
-  }
-
-  resize () {
-    this._bounds = dom.getBounds(this._container)
-    if (this._canvas.width !== this._bounds.width) { this._canvas.width = this._bounds.width }
-    if (this._canvas.height !== this._bounds.height) { this._canvas.height = this._bounds.height }
-  }
-
-  refresh = () => {
-    this.resize()
-    this.draw()
-  }
-
-  clear () {
-    this._ctx.clearRect(0, 0, this._canvas.width + 1, this._canvas.height + 1)
-  }
-
-  draw = () => {
-    this.clear()
-    this._images.forEach((img, i) => this.drawImage(i))
-  }
-
-  drawImage (i) {
-
-    // canvas dimensions
-    const { width, height } = this._canvas
-
-    // save canvas context
-    this._ctx.save()
-
-    // get translation offset
-    const offset = i - this._offset
-
-    // prevent render images outside of screen
-    if (Math.abs(offset) > 1) { return }
-
-    // translate context with actual index and offset
-    this._ctx.translate(offset * width, 0)
-
-    // image to draw
-    const img = this._images[i]
-
-    // check if image is loaded
-    if (img.loaded) {
-
-      // get dom element
-      const { el } = img
-
-      let w = el.naturalWidth
-      let h = el.naturalHeight
-      const ratio = w / h
-
-      if (w > width) {
-        w = width
-        h = w / ratio
-      }
-
-      if (h > height) {
-        h = height
-        w = h * ratio
-      }
-
-      const x = (width - w) / 2
-      const y = (height - h) / 2
-
-      this._ctx.drawImage(img.el, x, y, w, h)
-
-    } else {
-
-      const now = Date.now()
-
-      if (!img.loading && (!img.lastFetch || now - img.lastFetch > 1e3)) {
-        img.lastFetch = now
-        this.loadImage(img)
-          .then(() => {
-            if (img.error) {
-              setTimeout(this.draw.bind(this), 1.1e3)
-            } else {
-              this.draw()
-            }
-          })
-      }
-
-      // show loader
-      this.drawLoader()
-
     }
-
-    // restore canvas context
-    this._ctx.restore()
-  }
-
-  drawLoader () {
-    this._ctx.save()
-    this._ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'
-    this._ctx.beginPath()
-
-    const rotation = parseInt(Date.now() - this._now, 10) / 1000
-
-    this._ctx.translate(this._canvas.width / 2, this._canvas.height / 2)
-    this._ctx.rotate(Math.PI * 1.5 * rotation)
-    this._ctx.rect(-25, -25, 50, 50)
-    this._ctx.fill()
-    this._ctx.closePath()
-
-    this._ctx.restore()
-  }
-
-  animate () {
-    this._end = Date.now() + this._duration
-    if (this._animating) { return }
-    this._animating = true
-    this.tick()
-  }
-
-  tick = () => {
-
-    const now = Date.now()
-    const remaining = this._end - now
-
-    const easing = this._easing(remaining / this._duration) * 1
-
-    if (this._index > this._offset) {
-      this._offset += (this._index - this._offset) * (1 - easing)
-    } else {
-      this._offset -= (this._offset - this._index) * (1 - easing)
-    }
-
-    this.draw()
-
-    if (remaining < 50) {
-      this._offset = this._index
-    }
-
-    requestAnimationFrame(this.tick)
-
   }
 
 }
