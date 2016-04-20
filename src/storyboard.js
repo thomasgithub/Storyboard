@@ -1,5 +1,3 @@
-require('es6-promise').polyfill()
-
 import * as imageHelper from 'helpers/image'
 import * as dom from 'helpers/dom'
 
@@ -9,6 +7,9 @@ class Storyboard {
 
     // animation duration
     this._duration = 500
+
+    // time before retry fetch of a failed image
+    this._fetchRate = 1000
 
     // index of current image
     this._index = initialIndex || 0
@@ -22,7 +23,7 @@ class Storyboard {
     // ==> render
     this.render()
 
-    this.watchResize()
+    this.loop()
     window.addEventListener('resize', this.refresh)
 
   }
@@ -48,22 +49,24 @@ class Storyboard {
     this._slider.style.right = 0
     this._slider.style.bottom = 0
     dom.clearAndAppend(this._container, this._slider)
-    this.draw()
+
+    this.refresh()
   }
 
-  watchResize = () => {
+  /**
+   * Executed every 500ms
+   * Refresh the whole thing (for resizing, re-loading failed imgs, etc.)
+   */
+  loop = () => {
     if (this._destroyed) { return }
     this.refresh()
-    setTimeout(this.watchResize, 500)
+    setTimeout(this.loop, 500)
   }
 
-  draw () {
-    this._bounds = dom.getBounds(this._slider)
-    this._images.forEach(this.drawImage)
-    this.refresh()
-  }
-
-  drawImage = (img, i) => {
+  /**
+   * Create and put image in slider
+   */
+  putImage = (img, i) => {
     const image = dom.create('img')
     image.style.position = 'absolute'
     image.style.transition = '100ms ease-out transform'
@@ -74,6 +77,9 @@ class Storyboard {
     this._slider.appendChild(image)
   }
 
+  /**
+   * Refresh all. Check for needed images, boundaries
+   */
   refresh = () => {
     this.loadNeededImages()
     this._bounds = dom.getBounds(this._slider)
@@ -81,8 +87,22 @@ class Storyboard {
     this._images.forEach(this.scaleImage)
   }
 
-  scaleImage = img => {
+  /**
+   * Scale and translate image, to fit screen
+   */
+  scaleImage = (img, i) => {
     if (img.loaded) {
+
+      // remove loader if exists
+      if (img.loader) {
+        this._slider.removeChild(img.loader)
+        img.loader = null
+      }
+
+      // put image if not in dom
+      if (!img.domEl) {
+        this.putImage(img, i)
+      }
 
       const { width, height } = this._bounds
       const { el, domEl } = img
@@ -108,46 +128,57 @@ class Storyboard {
       img.domEl.style.opacity = 1
       dom.ajust(domEl, scale, x, y)
 
-    } else {
-      img.domEl.style.opacity = 0
+    } else if (!img.loader) {
+      this.putLoader(img, i)
     }
   }
 
+  /**
+   * Draw a loader
+   */
+  putLoader (img, i) {
+    const loader = dom.create('div')
+    loader.innerHTML = 'LOADING'
+    loader.style.position = 'absolute'
+    loader.style.left = `${i * 100 + 50}%`
+    loader.style.top = '50%'
+    loader.style.transform = 'translate(-50%, -50%)'
+    this._slider.appendChild(loader)
+    img.loader = loader
+  }
+
+  /**
+   * Load the current img, and prev/next if needed
+   */
   loadNeededImages () {
-    [
+    const now = Date.now()
+    const imgsToLoad = [
       this._images[this._index],
       this._index > 0 ? this._images[this._index - 1] : null,
       this._index < this._images.length - 1 ? this._images[this._index + 1] : null
     ]
-      .filter(img => !!img)
+
+    imgsToLoad
+      .filter(img => !!img && !img.loaded && !img.loading && (!img.lastFetch || now - img.lastFetch > this._fetchRate))
       .map(this.loadImage)
   }
 
   /**
    * Load an image
    * Attach error prop to it if failed
-   *
-   * @return {Promise} - resolved when image finished loading
    */
   loadImage = (img) => {
     img.loading = true
-    return imageHelper.load(img.src)
-
-      // all is alright
-      .then(el => {
+    imageHelper.load(img.src, (err, el) => {
+      img.loading = false
+      if (err) {
+        img.error = true
+        img.lastFetch = Date.now()
+      } else {
         img.el = el
         img.loaded = true
-      })
-
-      // image failed loading
-      .catch(() => {
-        img.error = true
-      })
-
-      // image is not loading anymore
-      .then(() => {
-        img.loading = false
-      })
+      }
+    })
   }
 
   /**
