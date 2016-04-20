@@ -31,5 +31,5 @@ export const translate = (el, val) => {
 }
 
 export const ajust = (el, scale, x, y) => {
-  el.style.transform = `scale(${scale}) translate(${x}px, ${y}px)`
+  el.style.transform = `translate(${x}px, ${y}px) scale(${scale})`
 }
