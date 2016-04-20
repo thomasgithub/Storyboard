@@ -20,6 +20,8 @@ class Storyboard {
     // images
     this._images = imagesSrcs.map(src => ({ src, loaded: false }))
 
+    this._pendingAnimations = 0
+
     // ==> render
     this.render()
 
@@ -42,7 +44,6 @@ class Storyboard {
   render () {
     this._container.style.overflow = 'hidden'
     this._slider = dom.create('div')
-    this._slider.style.transition = `${this._duration}ms ease-in-out transform`
     this._slider.style.position = 'absolute'
     this._slider.style.top = 0
     this._slider.style.left = 0
@@ -69,7 +70,6 @@ class Storyboard {
   putImage = (img, i) => {
     const image = dom.create('img')
     image.style.position = 'absolute'
-    image.style.transition = '100ms ease-out transform'
     image.style.transformOrigin = 'top left'
     image.style.left = `${i * 100}%`
     image.src = img.src
@@ -181,12 +181,24 @@ class Storyboard {
     })
   }
 
+  enableAnim () {
+    this._slider.style.transition = `${this._duration}ms ease-in-out transform`
+    this._pendingAnimations += 1
+    setTimeout(() => {
+      this._pendingAnimations -= 1
+      if (this._pendingAnimations === 0) {
+        this._slider.style.transition = 'none'
+      }
+    }, this._duration + 10)
+  }
+
   /**
    * Increase index
    */
   next () {
     if (this._index < this._images.length - 1) {
       ++this._index
+      this.enableAnim()
       this.refresh()
     }
   }
@@ -197,6 +209,7 @@ class Storyboard {
   prev () {
     if (this._index > 0) {
       --this._index
+      this.enableAnim()
       this.refresh()
     }
   }
