@@ -25,11 +25,30 @@ export const clearAndAppend = (container, el) => {
   container.appendChild(el)
 }
 
-export const translate = (el, val) => {
-  val = val ? `${val}px` : 0
-  el.style.transform = `translateX(${val})`
+/**
+ * Vendor prefixes
+ */
+
+export const setTransform = (el, val) => {
+  el.style.transform = val
+  el.style.msTransform = val
+  el.style.mozTransform = val
+  el.style.oTransform = val
+  el.style.webkitTransform = val
 }
 
-export const ajust = (el, scale, x, y) => {
-  el.style.transform = `translate(${x}px, ${y}px) scale(${scale})`
+export const setTransition = (el, val) => {
+  el.style.transition = val
+  el.style.msTransition = val
+  el.style.mozTransition = val
+  el.style.oTransition = val
+  el.style.webkitTransition = val
+}
+
+export const setTransformOrigin = (el, val) => {
+  el.style.transformOrigin = val
+  el.style.msTransformOrigin = val
+  el.style.mozTransformOrigin = val
+  el.style.oTransformOrigin = val
+  el.style.webkitTransformOrigin = val
 }
