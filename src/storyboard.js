@@ -116,19 +116,17 @@ class Storyboard {
       const { width, height } = this._bounds
       const { el, domEl } = img
 
-      let w = el.naturalWidth
       let h = el.naturalHeight
 
       let scale = 1
 
-      if (w > width) {
+      if (el.naturalWidth > width) {
         scale = width / el.naturalWidth
         h *= scale
       }
 
       if (h > height) {
         scale = height / el.naturalHeight
-        w *= scale
       }
 
       const x = (width - (scale * el.naturalWidth)) / 2
