@@ -19,3 +19,8 @@ Build the demo, to be hosted on a static server (output in `demo/` folder):
 ```
 npm run build:demo
 ```
+
+Lint the sources
+```
+npm run lint
+```
