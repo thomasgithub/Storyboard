@@ -11,6 +11,9 @@ class Storyboard {
     // time before retry fetch of a failed image
     this._fetchRate = 1000
 
+    // time between each refresh
+    this._refreshRate = 500
+
     // index of current image
     this._index = initialIndex || 0
 
@@ -20,13 +23,15 @@ class Storyboard {
     // images
     this._images = imagesSrcs.map(src => ({ src, loaded: false }))
 
+    // count how many animations are running
+    // (when using next/prev multiple times)
     this._pendingAnimations = 0
 
     // ==> render
     this.render()
 
+    // ==> refresh every n milliseconds
     this.loop()
-    window.addEventListener('resize', this.refresh)
 
   }
 
@@ -52,6 +57,7 @@ class Storyboard {
     dom.clearAndAppend(this._container, this._slider)
 
     this.refresh()
+    window.addEventListener('resize', this.refresh)
   }
 
   /**
@@ -61,7 +67,7 @@ class Storyboard {
   loop = () => {
     if (this._destroyed) { return }
     this.refresh()
-    setTimeout(this.loop, 500)
+    setTimeout(this.loop, this._refreshRate)
   }
 
   /**
