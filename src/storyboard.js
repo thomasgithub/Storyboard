@@ -122,11 +122,13 @@ class Storyboard {
 
       if (el.naturalWidth > width) {
         scale = width / el.naturalWidth
+        scale = Number((scale).toFixed(4));
         h *= scale
       }
 
       if (h > height) {
         scale = height / el.naturalHeight
+        scale = Number((scale).toFixed(4));
       }
 
       const x = (width - (scale * el.naturalWidth)) / 2
