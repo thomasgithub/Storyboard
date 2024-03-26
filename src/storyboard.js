@@ -222,6 +222,17 @@ class Storyboard {
     }
   }
 
+  /**
+   * Go to specified index
+   */
+  goto (index) {
+    if (index >= 0 && index < this._images.length) {
+      this._index = index;
+      this.enableAnim();
+      this.refresh();
+    }
+  }
+
 }
 
 module.exports = Storyboard
